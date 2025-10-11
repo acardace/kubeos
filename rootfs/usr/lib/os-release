@@ -1,0 +1,16 @@
+NAME="KubeOS"
+VERSION="1.34.1 (Fedora 42)"
+RELEASE_TYPE=stable
+ID=kubeos
+VERSION_ID=1.34.1
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f42"
+PRETTY_NAME="Kubernetes OS 1.34.1 (Fedora 42)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:42"
+DEFAULT_HOSTNAME="k8s-node"
+HOME_URL="https://github.com/acardace/k8s-bm"
+DOCUMENTATION_URL="https://github.com/acardace/k8s-bm"
+SUPPORT_URL="https://github.com/acardace/k8s-bm"
+BUG_REPORT_URL="https://github.com/acardace/k8s-bm/issues"

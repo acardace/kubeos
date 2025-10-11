@@ -1,0 +1,16 @@
+[Unit]
+Description=Automatic kubeadm cluster upgrade
+After=kubelet.service kubeadm-init.service
+Requires=kubelet.service
+# Only run if cluster already exists (admin.conf present)
+ConditionPathExists=/etc/kubernetes/admin.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/kubeadm-auto-upgrade.sh
+RemainAfterExit=yes
+# Give it time for cluster to be ready and upgrade to complete (30 minutes)
+TimeoutStartSec=1800
+
+[Install]
+WantedBy=multi-user.target

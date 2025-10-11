@@ -1,0 +1,4 @@
+# Enable disk mount units
+enable boot.mount
+enable var-mnt-backup.automount
+enable var-mnt-media.automount

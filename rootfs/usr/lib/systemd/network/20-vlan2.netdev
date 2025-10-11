@@ -1,0 +1,6 @@
+[NetDev]
+Name=vlan2
+Kind=vlan
+
+[VLAN]
+Id=2

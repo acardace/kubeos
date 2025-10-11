@@ -1,0 +1,7 @@
+enable crio.service
+enable kubelet.service
+enable systemd-networkd.service
+enable kubeadm-init.service
+enable kubeadm-auto-upgrade.service
+enable approve-kubelet-csr.timer
+enable sshd.service

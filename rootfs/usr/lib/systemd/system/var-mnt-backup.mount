@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup disk mount
+
+[Mount]
+What=BACKUP_DISK_PLACEHOLDER
+Where=/var/mnt/backup
+Type=xfs
+Options=defaults

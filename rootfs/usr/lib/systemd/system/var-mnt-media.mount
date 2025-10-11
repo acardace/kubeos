@@ -1,0 +1,8 @@
+[Unit]
+Description=Media disk mount
+
+[Mount]
+What=MEDIA_DISK_PLACEHOLDER
+Where=/var/mnt/media
+Type=xfs
+Options=defaults

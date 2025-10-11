@@ -1,0 +1,52 @@
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 192.168.16.7
+  bindPort: 6443
+nodeRegistration:
+  criSocket: unix:///var/run/crio/crio.sock
+  kubeletExtraArgs:
+    - name: node-ip
+      value: 192.168.16.7
+    - name: rotate-server-certificates
+      value: "true"
+  taints: []
+patches:
+  directory: /etc/kubernetes/patches
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: v1.34.1
+clusterName: home
+controlPlaneEndpoint: "192.168.16.7:6443"
+networking:
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+  dnsDomain: cluster.local
+apiServer:
+  certSANs:
+    - 192.168.16.7
+  extraArgs:
+    - name: feature-gates
+      value: "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+controllerManager:
+  extraArgs:
+    - name: bind-address
+      value: 0.0.0.0
+scheduler:
+  extraArgs:
+    - name: bind-address
+      value: 0.0.0.0
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+serverTLSBootstrap: true
+rotateCertificates: true
+seccompDefault: true
+featureGates:
+  UserNamespacesSupport: true
+  UserNamespacesPodSecurityStandards: true
+containerRuntimeEndpoint: unix:///var/run/crio/crio.sock

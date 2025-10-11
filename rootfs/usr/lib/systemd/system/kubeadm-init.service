@@ -1,0 +1,18 @@
+[Unit]
+Description=Initialize Kubernetes cluster
+After=crio.service network-online.target
+Requires=crio.service
+ConditionPathExists=!/etc/kubernetes/admin.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml
+ExecStartPost=/bin/sh -c 'mkdir -p /var/home/core/.kube && cp /etc/kubernetes/admin.conf /var/home/core/.kube/config && chown -R 1000:1000 /var/home/core/.kube'
+ExecStartPost=/usr/bin/kubectl --kubeconfig=/etc/kubernetes/admin.conf apply -f https://github.com/flannel-io/flannel/releases/download/v0.26.2/kube-flannel.yml
+ExecStartPost=/usr/bin/kubectl --kubeconfig=/etc/kubernetes/admin.conf label node --all node-role.kubernetes.io/worker="" --overwrite
+ExecStartPost=/usr/bin/kubectl --kubeconfig=/etc/kubernetes/admin.conf label node --all home.k8s/disk-backup="" home.k8s/disk-media="" home.k8s/device=coral-tpu home.k8s/device-igpu="" --overwrite
+ExecStartPost=/usr/bin/systemctl start approve-kubelet-csr.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

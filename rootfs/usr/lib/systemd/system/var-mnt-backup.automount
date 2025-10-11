@@ -1,0 +1,10 @@
+[Unit]
+Description=Automount for backup disk
+Before=local-fs.target
+
+[Automount]
+Where=/var/mnt/backup
+TimeoutIdleSec=5min
+
+[Install]
+WantedBy=local-fs.target

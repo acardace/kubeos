@@ -1,0 +1,11 @@
+[Unit]
+Description=Auto-approve kubelet serving CSRs every 5 minutes
+After=kubelet.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Unit=approve-kubelet-csr.service
+
+[Install]
+WantedBy=timers.target

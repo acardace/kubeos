@@ -1,0 +1,9 @@
+[Match]
+Type=ether
+Kind=!*
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+VLAN=vlan2
