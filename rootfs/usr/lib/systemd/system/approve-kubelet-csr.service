@@ -1,0 +1,12 @@
+[Unit]
+Description=Auto-approve kubelet serving CSRs
+After=kubelet.service
+Requires=kubelet.service
+ConditionPathExists=/etc/kubernetes/admin.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/approve-kubelet-csr.sh
+
+[Install]
+WantedBy=multi-user.target

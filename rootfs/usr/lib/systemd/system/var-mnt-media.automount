@@ -1,0 +1,9 @@
+[Unit]
+Description=Automount for media disk
+Before=local-fs.target
+
+[Automount]
+Where=/var/mnt/media
+
+[Install]
+WantedBy=local-fs.target

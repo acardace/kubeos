@@ -1,0 +1,71 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "kubernetes": {
+    "fileMatch": [
+      "^rootfs/etc/kubernetes/manifests/.+\\.yaml$"
+    ]
+  },
+  "regexManagers": [
+    {
+      "fileMatch": ["^Containerfile$"],
+      "matchStrings": [
+        "ARG KUBERNETES_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "kubeadm-(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "kubelet-(?<currentValue>\\d+\\.\\d+\\.\\d+)",
+        "kubectl-(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "fileMatch": ["^rootfs/etc/yum\\.repos\\.d/kubernetes\\.repo$"],
+      "matchStrings": [
+        "baseurl=https://pkgs\\.k8s\\.io/core:/stable:/v(?<currentValue>\\d+\\.\\d+)/rpm/",
+        "gpgkey=https://pkgs\\.k8s\\.io/core:/stable:/v(?<currentValue>\\d+\\.\\d+)/rpm/"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+)"
+    },
+    {
+      "fileMatch": ["^rootfs/etc/kubernetes/kubeadm-config\\.yaml$"],
+      "matchStrings": [
+        "kubernetesVersion: v(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "depNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    },
+    {
+      "fileMatch": [
+        "^rootfs/usr/lib/systemd/system/.*\\.service$",
+        "^rootfs/usr/local/bin/.*\\.sh$"
+      ],
+      "matchStrings": [
+        "flannel/releases/download/(?<currentValue>v[0-9.]+)/kube-flannel\\.yml"
+      ],
+      "depNameTemplate": "flannel-io/flannel",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/fedora/fedora-bootc"],
+      "enabled": true
+    },
+    {
+      "matchPackageNames": ["kubernetes/kubernetes"],
+      "groupName": "kubernetes",
+      "description": "Group all Kubernetes updates together. Note: GitHub releases may appear before RPM packages are available at pkgs.k8s.io. Verify RPM availability before merging.",
+      "minimumReleaseAge": "7 days",
+      "schedule": ["before 3am on Monday"]
+    }
+  ]
+}
