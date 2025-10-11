@@ -25,8 +25,19 @@ KUBERNETES_VERSION="${KUBERNETES_VERSION:-}"
 
 echo -e "${GREEN}=== Fedora bootc Kubernetes Test VM Setup ===${NC}\n"
 
-# Step 1: Build the test image using build.sh
-echo -e "${YELLOW}[1/7] Building bootc test image...${NC}"
+# Cleanup ignition file on exit
+IGNITION_FILE="${SCRIPT_DIR}/../${VM_NAME}.ign"
+trap "rm -f ${IGNITION_FILE}" EXIT
+
+# Step 1: Convert Butane config to Ignition
+echo -e "${YELLOW}[1/8] Converting Butane config to Ignition...${NC}"
+podman run --interactive --rm --security-opt label=disable \
+    --volume "${SCRIPT_DIR}/..:/pwd" --workdir /pwd quay.io/coreos/butane:release \
+    --pretty --strict k8s-test.bu > "${IGNITION_FILE}"
+echo -e "${GREEN}✓ Ignition file created${NC}\n"
+
+# Step 2: Build the test image using build.sh
+echo -e "${YELLOW}[2/8] Building bootc test image...${NC}"
 if [ -n "$KUBERNETES_VERSION" ]; then
     echo "Kubernetes version: ${KUBERNETES_VERSION}"
     FULL_IMAGE=$(cd "$SCRIPT_DIR" && ./build.sh --test --kube-version "$KUBERNETES_VERSION" | tail -1)
@@ -38,8 +49,8 @@ echo -e "${GREEN}✓ Build complete${NC}"
 echo "Image: ${FULL_IMAGE}"
 echo ""
 
-# Step 2: Create isolated network matching VLAN 2 setup
-echo -e "${YELLOW}[2/7] Creating isolated network (${TEST_SUBNET_PREFIX}.0/24)...${NC}"
+# Step 3: Create isolated network matching VLAN 2 setup
+echo -e "${YELLOW}[3/8] Creating isolated network (${TEST_SUBNET_PREFIX}.0/24)...${NC}"
 if sudo virsh net-info ${NETWORK_NAME} &>/dev/null; then
     echo "Network ${NETWORK_NAME} already exists, deleting..."
     sudo virsh net-destroy ${NETWORK_NAME} 2>/dev/null || true
@@ -58,8 +69,8 @@ fi
 
 echo -e "${GREEN}✓ Test network created${NC}\n"
 
-# Step 3: Create VM from Fedora CoreOS
-echo -e "${YELLOW}[3/7] Creating VM '${VM_NAME}' from Fedora CoreOS...${NC}"
+# Step 4: Create VM from Fedora CoreOS with Ignition
+echo -e "${YELLOW}[4/8] Creating VM '${VM_NAME}' from Fedora CoreOS with Ignition config...${NC}"
 if sudo kcli list vm 2>/dev/null | grep -qw "${VM_NAME}"; then
     echo "VM ${VM_NAME} already exists, deleting..."
     sudo kcli delete vm ${VM_NAME} -y
@@ -76,10 +87,10 @@ sudo kcli create vm ${VM_NAME} \
         exit 1
     }
 
-echo -e "${GREEN}✓ VM created${NC}\n"
+echo -e "${GREEN}✓ VM created (ignition configured password and disks)${NC}\n"
 
-# Step 4: Wait for VM network and set password
-echo -e "${YELLOW}[4/7] Waiting for VM to be accessible and setting password...${NC}"
+# Step 5: Wait for VM to be accessible after ignition
+echo -e "${YELLOW}[5/8] Waiting for VM to complete ignition setup...${NC}"
 
 # Wait for VM to get an IP address
 echo "Waiting for VM to get an IP address..."
@@ -123,56 +134,10 @@ if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
     exit 1
 fi
 
-# Set password for core user before bootc switch
-# This will be preserved through the 3-way merge
-echo "Setting password for core user in FCOS..."
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@${VM_IP} << 'EOSSH'
-echo 'core:debug' | sudo chpasswd
-EOSSH
-
-echo -e "${GREEN}✓ Password set${NC}\n"
-
-# Step 5: Partition and format disks for backup and media
-echo -e "${YELLOW}[5/7] Partitioning and formatting backup and media disks...${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@${VM_IP} << 'EOSSH'
-# Partition disks (create single partition on each)
-echo "Creating partitions..."
-echo -e "g\nn\n\n\n\nw\n" | sudo fdisk /dev/vdb
-echo -e "g\nn\n\n\n\nw\n" | sudo fdisk /dev/vdc
-
-# Wait for partitions to appear
-echo "Waiting for partitions to appear..."
-MAX_RETRIES=10
-for dev in vdb1 vdc1; do
-    RETRY_COUNT=0
-    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-        if [ -b /dev/$dev ]; then
-            echo "/dev/$dev is ready"
-            break
-        fi
-        RETRY_COUNT=$((RETRY_COUNT + 1))
-        if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-            sleep 1
-        fi
-    done
-    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-        echo "ERROR: /dev/$dev did not appear after ${MAX_RETRIES} attempts"
-        exit 1
-    fi
-done
-
-# Format partitions with XFS
-echo "Formatting partitions with XFS..."
-sudo mkfs.xfs -f /dev/vdb1
-sudo mkfs.xfs -f /dev/vdc1
-
-echo "Disks formatted and ready"
-EOSSH
-
-echo -e "${GREEN}✓ Disks formatted${NC}\n"
+echo -e "${GREEN}✓ VM ready${NC}\n"
 
 # Step 6: Switch to kubeos image
-echo -e "${YELLOW}[6/7] Switching VM to kubernetes bootc image...${NC}"
+echo -e "${YELLOW}[6/8] Switching VM to kubernetes bootc image...${NC}"
 
 # Get Quay credentials
 QUAY_USER=$(bw get item quay.io | jq -r '.login.username')
@@ -202,8 +167,8 @@ echo -e "${GREEN}✓ VM rebooting to new image${NC}\n"
 
 echo "Waiting for VM to reboot..."
 
-# Step 7: Configure bridge and wait for VM to be ready
-echo -e "${YELLOW}[7/7] Configuring VLAN-aware bridge and waiting for VM...${NC}"
+# Step 7: Configure bridge
+echo -e "${YELLOW}[7/8] Configuring VLAN-aware bridge...${NC}"
 echo "Setting bridge to VLAN-aware mode..."
 sudo ip link set virbr-k8stest type bridge vlan_filtering 1
 # Remove default VLAN 1 to avoid confusion
@@ -224,8 +189,8 @@ fi
 
 echo -e "${GREEN}✓ Bridge configured for VLAN 2${NC}\n"
 
-# Wait for VM to be reachable and Kubernetes to initialize
-echo "Waiting for VM to become reachable..."
+# Step 8: Wait for VM to be ready
+echo -e "${YELLOW}[8/8] Waiting for VM to become reachable and Kubernetes to start...${NC}"
 MAX_RETRIES=60
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do

@@ -1,0 +1,25 @@
+variant: fcos
+version: 1.5.0
+passwd:
+  users:
+    - name: core
+      password_hash: "$y$j9T$6gIyvxnR8IRJIUNlJeUfB.$cIHF73GOc8Re33/Da3G1LvMLbklHQy8/16HCW0wCBb4"
+storage:
+  disks:
+    - device: /dev/vdb
+      wipe_table: true
+      partitions:
+        - number: 1
+          label: backup
+    - device: /dev/vdc
+      wipe_table: true
+      partitions:
+        - number: 1
+          label: media
+  filesystems:
+    - path: /var/backup
+      device: /dev/disk/by-partlabel/backup
+      format: xfs
+    - path: /var/media
+      device: /dev/disk/by-partlabel/media
+      format: xfs
