@@ -1,6 +1,6 @@
 # Makefile for KubeOS - Fedora bootc Kubernetes image
 
-.PHONY: help build build-test test test-clean test-verify remote-verify
+.PHONY: help build build-test test test-ssh test-clean test-verify remote-verify
 
 # Default target
 help:
@@ -9,6 +9,7 @@ help:
 	@echo "  make build                - Build and push production image"
 	@echo "  make build-test           - Build and push test image"
 	@echo "  make test                 - Build and deploy test VM with isolated network"
+	@echo "  make test-ssh             - SSH into test VM"
 	@echo "  make test-clean           - Clean up test VM and network"
 	@echo "  make test-verify          - Run full cluster verification on test VM"
 	@echo "  make remote-verify        - Run full cluster verification on production node"
@@ -39,6 +40,10 @@ build-test:
 # Run test VM setup
 test:
 	@./scripts/test-vm.sh
+
+# SSH into test VM
+test-ssh:
+	@ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@10.99.16.7
 
 # Clean up test environment
 test-clean:
