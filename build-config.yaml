@@ -1,0 +1,18 @@
+# Production build configuration for KubeOS
+# This file contains all container build arguments with their default values
+
+# Kubernetes version - monitored by Renovate
+kubernetes_version: "1.34.1"
+
+# Network configuration
+network:
+  subnet_prefix: "192.168.16"
+  node_ip: "192.168.16.7"
+  gateway_ip: "192.168.16.1"
+  dns_ip: "192.168.16.1"
+  cluster_name: "home"
+
+# Disk configuration (hardware-specific paths)
+disks:
+  backup: "/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y0SS50Y6-part1"
+  media: "/dev/disk/by-id/ata-WDC_WD5000LPLX-66ZNTT1_WD-WXJ1A56K9D2J-part1"

@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - 'Containerfile'
+      - 'build-config.yaml'
       - 'rootfs/**'
       - 'scripts/**'
       - '.github/workflows/image.yml'
@@ -19,6 +20,7 @@ on:
       - main
     paths:
       - 'Containerfile'
+      - 'build-config.yaml'
       - 'rootfs/**'
       - 'scripts/**'
       - '.github/workflows/image.yml'
@@ -42,21 +44,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Extract Kubernetes version from Containerfile
-        id: k8s-version
+      - name: Install yq
         run: |
-          VERSION=$(grep '^ARG KUBERNETES_VERSION=' Containerfile | cut -d'=' -f2)
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Kubernetes version: ${VERSION}"
+          sudo apt-get update
+          sudo apt-get install -y yq
 
-      - name: Build container image
-        uses: redhat-actions/buildah-build@v2
-        with:
-          image: ${{ env.IMAGE_NAME }}
-          tags: latest ${{ steps.k8s-version.outputs.version }} ${{ github.sha }}
-          containerfiles: Containerfile
-          layers: true
-          oci: true
+      - name: Build and tag image
+        run: ./scripts/build.sh --skip-push
+
+      - name: Extract image tag for push
+        id: image-info
+        run: |
+          VERSION=$(yq eval '.kubernetes_version' build-config.yaml)
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Image will be pushed with tags: latest, ${VERSION}"
 
       - name: Push image to Quay.io
         uses: redhat-actions/push-to-registry@v2
@@ -66,4 +67,4 @@ jobs:
           password: ${{ secrets.BOT_PASSWORD }}
           image: ${{ env.IMAGE_NAME }}
           registry: ${{ env.REGISTRY }}
-          tags: latest ${{ steps.k8s-version.outputs.version }} ${{ github.sha }}
+          tags: latest ${{ steps.image-info.outputs.version }}
