@@ -49,15 +49,46 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y yq
 
-      - name: Build and tag image
-        run: ./scripts/build.sh --skip-push
-
-      - name: Extract image tag for push
-        id: image-info
+      - name: Extract build configuration
+        id: config
         run: |
-          VERSION=$(yq eval '.kubernetes_version' build-config.yaml)
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "Image will be pushed with tags: latest, ${VERSION}"
+          KUBERNETES_VERSION=$(yq eval '.kubernetes_version' build-config.yaml)
+          SUBNET_PREFIX=$(yq eval '.network.subnet_prefix' build-config.yaml)
+          NODE_IP=$(yq eval '.network.node_ip' build-config.yaml)
+          GATEWAY_IP=$(yq eval '.network.gateway_ip' build-config.yaml)
+          DNS_IP=$(yq eval '.network.dns_ip' build-config.yaml)
+          CLUSTER_NAME=$(yq eval '.network.cluster_name' build-config.yaml)
+          BACKUP_DISK=$(yq eval '.disks.backup' build-config.yaml)
+          MEDIA_DISK=$(yq eval '.disks.media' build-config.yaml)
+
+          echo "kubernetes_version=${KUBERNETES_VERSION}" >> $GITHUB_OUTPUT
+          echo "subnet_prefix=${SUBNET_PREFIX}" >> $GITHUB_OUTPUT
+          echo "node_ip=${NODE_IP}" >> $GITHUB_OUTPUT
+          echo "gateway_ip=${GATEWAY_IP}" >> $GITHUB_OUTPUT
+          echo "dns_ip=${DNS_IP}" >> $GITHUB_OUTPUT
+          echo "cluster_name=${CLUSTER_NAME}" >> $GITHUB_OUTPUT
+          echo "backup_disk=${BACKUP_DISK}" >> $GITHUB_OUTPUT
+          echo "media_disk=${MEDIA_DISK}" >> $GITHUB_OUTPUT
+
+          echo "Building with Kubernetes ${KUBERNETES_VERSION}"
+
+      - name: Build container image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          tags: latest ${{ steps.config.outputs.kubernetes_version }}
+          containerfiles: Containerfile
+          layers: true
+          oci: true
+          build-args: |
+            KUBERNETES_VERSION=${{ steps.config.outputs.kubernetes_version }}
+            SUBNET_PREFIX=${{ steps.config.outputs.subnet_prefix }}
+            NODE_IP=${{ steps.config.outputs.node_ip }}
+            GATEWAY_IP=${{ steps.config.outputs.gateway_ip }}
+            DNS_IP=${{ steps.config.outputs.dns_ip }}
+            CLUSTER_NAME=${{ steps.config.outputs.cluster_name }}
+            BACKUP_DISK=${{ steps.config.outputs.backup_disk }}
+            MEDIA_DISK=${{ steps.config.outputs.media_disk }}
 
       - name: Push image to Quay.io
         uses: redhat-actions/push-to-registry@v2
@@ -67,4 +98,4 @@ jobs:
           password: ${{ secrets.BOT_PASSWORD }}
           image: ${{ env.IMAGE_NAME }}
           registry: ${{ env.REGISTRY }}
-          tags: latest ${{ steps.image-info.outputs.version }}
+          tags: latest ${{ steps.config.outputs.kubernetes_version }}
