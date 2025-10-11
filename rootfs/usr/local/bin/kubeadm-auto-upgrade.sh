@@ -84,7 +84,7 @@ log "Will upgrade cluster from ${CLUSTER_VERSION} to ${KUBEADM_VERSION}"
 
 # Perform upgrade
 log "Running: kubeadm upgrade apply v${KUBEADM_VERSION} --yes"
-if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes --patches /etc/kubernetes/patches; then
+if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes ; then
     log "✓ Cluster upgrade successful"
 
     # Update Flannel to ensure compatibility with new Kubernetes version

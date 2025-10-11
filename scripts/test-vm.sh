@@ -9,57 +9,33 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-IMAGE_NAME="k8s-node"
 SCRIPT_DIR="$(dirname "$0")"
-
-# Kubernetes version (can be overridden with KUBERNETES_VERSION env var for testing upgrades)
-KUBERNETES_VERSION="${KUBERNETES_VERSION:-1.34.1}"
-
-# Get git SHA for deterministic tagging
-cd "${SCRIPT_DIR}/../.."
-GIT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-if [ "$GIT_SHA" = "unknown" ]; then
-    echo -e "${RED}ERROR: Not in a git repository${NC}"
-    exit 1
-fi
-IMAGE_TAG="test-vm-${GIT_SHA}"
-cd - >/dev/null
-
-REGISTRY="quay.io/acardace"
-FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
 VM_NAME="k8s-test"
 NETWORK_NAME="k8s-test-vlan2"
+REGISTRY="quay.io/acardace"
+IMAGE_NAME="kubeos"
 
 # Test network configuration (different from production)
 TEST_SUBNET_PREFIX="10.99.16"
 TEST_NODE_IP="${TEST_SUBNET_PREFIX}.7"
 TEST_GATEWAY_IP="${TEST_SUBNET_PREFIX}.1"
-TEST_CLUSTER_NAME="home-test"
+
+# Kubernetes version (can be overridden with KUBERNETES_VERSION env var for testing upgrades)
+KUBERNETES_VERSION="${KUBERNETES_VERSION:-}"
 
 echo -e "${GREEN}=== Fedora bootc Kubernetes Test VM Setup ===${NC}\n"
 
-# Step 1: Build the image with test network configuration
-echo -e "${YELLOW}[1/7] Building bootc image with test network (${TEST_SUBNET_PREFIX}.0/24)...${NC}"
-echo "Image tag: ${IMAGE_TAG} (git SHA: ${GIT_SHA})"
-echo "Kubernetes version: ${KUBERNETES_VERSION}"
-
-# Check if image already exists locally
-if podman image exists localhost/${IMAGE_NAME}:${IMAGE_TAG}; then
-    echo -e "${BLUE}Image localhost/${IMAGE_NAME}:${IMAGE_TAG} already exists, skipping build${NC}"
+# Step 1: Build the test image using build.sh
+echo -e "${YELLOW}[1/7] Building bootc test image...${NC}"
+if [ -n "$KUBERNETES_VERSION" ]; then
+    echo "Kubernetes version: ${KUBERNETES_VERSION}"
+    FULL_IMAGE=$(cd "$SCRIPT_DIR" && ./build.sh --test --kube-version "$KUBERNETES_VERSION" | tail -1)
 else
-    cd "${SCRIPT_DIR}/.."
-    podman build \
-        --build-arg KUBERNETES_VERSION=${KUBERNETES_VERSION} \
-        --build-arg SUBNET_PREFIX=${TEST_SUBNET_PREFIX} \
-        --build-arg NODE_IP=${TEST_NODE_IP} \
-        --build-arg GATEWAY_IP=${TEST_GATEWAY_IP} \
-        --build-arg DNS_IP=${TEST_GATEWAY_IP} \
-        --build-arg CLUSTER_NAME=${TEST_CLUSTER_NAME} \
-        --build-arg BACKUP_DISK=/dev/vdb1 \
-        --build-arg MEDIA_DISK=/dev/vdc1 \
-        -t localhost/${IMAGE_NAME}:${IMAGE_TAG} .
-    echo -e "${GREEN}✓ Build complete${NC}"
+    echo "Kubernetes version: default from Containerfile"
+    FULL_IMAGE=$(cd "$SCRIPT_DIR" && ./build.sh --test | tail -1)
 fi
+echo -e "${GREEN}✓ Build complete${NC}"
+echo "Image: ${FULL_IMAGE}"
 echo ""
 
 # Step 2: Create isolated network matching VLAN 2 setup
@@ -82,21 +58,8 @@ fi
 
 echo -e "${GREEN}✓ Test network created${NC}\n"
 
-# Step 3: Login to Quay
-echo -e "${YELLOW}[3/7] Logging into Quay.io...${NC}"
-QUAY_USER=$(bw get item quay.io | jq -r '.login.username')
-QUAY_PASS=$(bw get item quay.io | jq -r '.login.password')
-echo "${QUAY_PASS}" | podman login -u "${QUAY_USER}" --password-stdin quay.io
-echo -e "${GREEN}✓ Logged in${NC}\n"
-
-# Step 4: Tag and push image
-echo -e "${YELLOW}[4/7] Tagging and pushing image to ${FULL_IMAGE}...${NC}"
-podman tag localhost/${IMAGE_NAME}:${IMAGE_TAG} ${FULL_IMAGE}
-podman push ${FULL_IMAGE}
-echo -e "${GREEN}✓ Image pushed${NC}\n"
-
-# Step 5: Create VM from Fedora CoreOS
-echo -e "${YELLOW}[5/7] Creating VM '${VM_NAME}' from Fedora CoreOS...${NC}"
+# Step 3: Create VM from Fedora CoreOS
+echo -e "${YELLOW}[3/7] Creating VM '${VM_NAME}' from Fedora CoreOS...${NC}"
 if sudo kcli list vm 2>/dev/null | grep -qw "${VM_NAME}"; then
     echo "VM ${VM_NAME} already exists, deleting..."
     sudo kcli delete vm ${VM_NAME} -y
@@ -115,8 +78,8 @@ sudo kcli create vm ${VM_NAME} \
 
 echo -e "${GREEN}✓ VM created${NC}\n"
 
-# Step 6: Wait for VM network and set password
-echo -e "${YELLOW}[6/7] Waiting for VM to be accessible and setting password...${NC}"
+# Step 4: Wait for VM network and set password
+echo -e "${YELLOW}[4/7] Waiting for VM to be accessible and setting password...${NC}"
 
 # Wait for VM to get an IP address
 echo "Waiting for VM to get an IP address..."
@@ -169,8 +132,8 @@ EOSSH
 
 echo -e "${GREEN}✓ Password set${NC}\n"
 
-# Partition and format disks for backup and media
-echo "Partitioning and formatting backup and media disks..."
+# Step 5: Partition and format disks for backup and media
+echo -e "${YELLOW}[5/7] Partitioning and formatting backup and media disks...${NC}"
 ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@${VM_IP} << 'EOSSH'
 # Partition disks (create single partition on each)
 echo "Creating partitions..."
@@ -208,8 +171,12 @@ EOSSH
 
 echo -e "${GREEN}✓ Disks formatted${NC}\n"
 
-# Step 7: Switch to k8s image
-echo -e "${YELLOW}[7/7] Switching VM to kubernetes bootc image...${NC}"
+# Step 6: Switch to kubeos image
+echo -e "${YELLOW}[6/7] Switching VM to kubernetes bootc image...${NC}"
+
+# Get Quay credentials
+QUAY_USER=$(bw get item quay.io | jq -r '.login.username')
+QUAY_PASS=$(bw get item quay.io | jq -r '.login.password')
 
 # Create credentials file for podman login inside VM
 CREDS_FILE=$(mktemp)
@@ -235,9 +202,8 @@ echo -e "${GREEN}✓ VM rebooting to new image${NC}\n"
 
 echo "Waiting for VM to reboot..."
 
-# Configure bridge to be VLAN-aware after bootc switch
-# Now the VM will use VLAN 2 tagged traffic, bridge needs to handle it
-echo -e "${YELLOW}Configuring VLAN-aware bridge for bootc image...${NC}"
+# Step 7: Configure bridge and wait for VM to be ready
+echo -e "${YELLOW}[7/7] Configuring VLAN-aware bridge and waiting for VM...${NC}"
 echo "Setting bridge to VLAN-aware mode..."
 sudo ip link set virbr-k8stest type bridge vlan_filtering 1
 # Remove default VLAN 1 to avoid confusion
@@ -252,18 +218,14 @@ if [ -n "$VNET_IFACE" ]; then
     echo "Configuring ${VNET_IFACE} as trunk for VLAN 2..."
     sudo bridge vlan del vid 1 dev ${VNET_IFACE} 2>/dev/null || true
     sudo bridge vlan add vid 2 dev ${VNET_IFACE}
-    echo "VM interface VLAN configuration:"
-    sudo bridge vlan show dev ${VNET_IFACE}
 else
     echo -e "${RED}⚠ Could not find vnet interface for VM${NC}"
 fi
 
-echo "Bridge VLAN configuration:"
-sudo bridge vlan show dev virbr-k8stest
-echo -e "${GREEN}✓ Bridge configured for VLAN 2 (host uses untagged, guest uses tagged)${NC}\n"
+echo -e "${GREEN}✓ Bridge configured for VLAN 2${NC}\n"
 
 # Wait for VM to be reachable and Kubernetes to initialize
-echo -e "${YELLOW}Waiting for VM to become reachable...${NC}"
+echo "Waiting for VM to become reachable..."
 MAX_RETRIES=60
 RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
@@ -319,7 +281,6 @@ echo "  3. Access K8s API: curl -k https://${TEST_NODE_IP}:6443"
 echo "  4. Console: sudo virsh console ${VM_NAME}  (login: core / password: debug)"
 echo ""
 echo "Check kubernetes status remotely from laptop:"
-echo "  ${SCRIPT_DIR}/remote-quick-check.sh --test           # Quick health check"
 echo "  ${SCRIPT_DIR}/remote-verify-cluster.sh --test        # Full verification"
 echo ""
 echo "Or check directly on the VM:"

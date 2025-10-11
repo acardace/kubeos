@@ -1,12 +1,13 @@
 FROM quay.io/fedora/fedora-bootc:42
 
+LABEL bootc.image-description="Kubernetes OS (Fedora Bootc)"
+
 # Kubernetes version (can be overridden for testing upgrades)
 ARG KUBERNETES_VERSION=1.34.1
 
 # Network configuration (can be overridden for testing)
 ARG SUBNET_PREFIX=192.168.16
 ARG NODE_IP=192.168.16.7
-ARG VIP_IP=192.168.16.3
 ARG GATEWAY_IP=192.168.16.1
 ARG DNS_IP=192.168.16.1
 ARG CLUSTER_NAME=home
@@ -46,9 +47,11 @@ RUN dnf remove -y \
         kubectl-${KUBERNETES_VERSION} \
         containernetworking-plugins \
         iproute \
-        iptables \
+        nftables \
         openssh-server \
         xfsprogs \
+        bash-completion \
+        distrobox \
         jq \
     && dnf clean all \
     && rm -rf /usr/share/man/* \
