@@ -1,6 +1,6 @@
 # Makefile for KubeOS - Fedora bootc Kubernetes image
 
-.PHONY: help build build-test test test-ssh test-kubeconfig test-clean test-verify remote-verify
+.PHONY: help build build-test test test-ssh test-kubeconfig test-clean test-verify cluster-verify kubeconfig
 
 # Default target
 help:
@@ -13,7 +13,8 @@ help:
 	@echo "  make test-kubeconfig      - Copy kubeconfig from test VM to local directory"
 	@echo "  make test-clean           - Clean up test VM and network"
 	@echo "  make test-verify          - Run full cluster verification on test VM"
-	@echo "  make remote-verify        - Run full cluster verification on production node"
+	@echo "  make cluster-verify       - Run full cluster verification on production node"
+	@echo "  make kubeconfig           - Copy kubeconfig from production cluster"
 	@echo ""
 	@echo "Build options:"
 	@echo "  TAG=<tag>                 Custom tag for production build (default: latest)"
@@ -23,7 +24,7 @@ help:
 	@echo "  make build-test                           # Build test image"
 	@echo "  make test                                 # Deploy test environment"
 	@echo "  make test-verify                          # Verify test cluster"
-	@echo "  make remote-verify                        # Verify production cluster"
+	@echo "  make cluster-verify                       # Verify production cluster"
 	@echo ""
 
 # Build production image
@@ -55,10 +56,15 @@ test-kubeconfig:
 test-clean:
 	@./scripts/cleanup-test.sh
 
-# Remote cluster verification
-remote-verify:
+# Cluster verification (production)
+cluster-verify:
 	@./scripts/remote-verify-cluster.sh
 
 # Test VM verification
 test-verify:
 	@./scripts/remote-verify-cluster.sh --test
+
+# Copy kubeconfig from production cluster
+kubeconfig:
+	@scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.16.7:/var/home/core/.kube/config kubeconfig
+	@echo "Kubeconfig copied to ./kubeconfig"
