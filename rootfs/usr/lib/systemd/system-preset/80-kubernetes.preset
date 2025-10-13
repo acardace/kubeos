@@ -5,3 +5,4 @@ enable kubeadm-init.service
 enable kubeadm-auto-upgrade.service
 enable approve-kubelet-csr.timer
 enable sshd.service
+disable rpm-ostree-countme.service
