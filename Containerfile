@@ -1,4 +1,4 @@
-FROM quay.io/fedora/fedora-bootc:42
+FROM quay.io/fedora/fedora-bootc:44
 
 LABEL bootc.image-description="Kubernetes OS (Fedora Bootc)"
 
