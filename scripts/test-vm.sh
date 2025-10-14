@@ -78,8 +78,8 @@ fi
 
 sudo kcli create vm ${VM_NAME} \
     -i fcos \
-    -P memory=4096 \
-    -P cores=2 \
+    -P memory=8192 \
+    -P cores=4 \
     -P disks=[30,10,10,10,10,10] \
     -P nets=[${NETWORK_NAME}] \
     -P keys=['ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOeHlYMy97S9KKda5QdORi6wujhntAoFXIbfrF+rn9CK antonio@mushu'] || {
