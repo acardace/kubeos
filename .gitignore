@@ -1,2 +1,3 @@
 kubeconfig
 *.ign
+rootfs/usr/lib/ostree/auth.json
