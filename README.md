@@ -58,6 +58,8 @@ The image is built with production defaults:
 
 ### Building the Image
 
+#### Local Build
+
 ```bash
 # Build and push production image
 make build
@@ -70,6 +72,26 @@ The build script:
 - Builds with production network config (192.168.16.0/24)
 - Logs into Quay.io using Bitwarden credentials
 - Pushes to `quay.io/acardace/kubeos:latest`
+
+**Note**: For local builds, you need `rootfs/usr/lib/ostree/auth.json` with your Quay.io credentials:
+```json
+{
+  "auths": {
+    "quay.io": {
+      "auth": "BASE64_ENCODED_USERNAME_PASSWORD"
+    }
+  }
+}
+```
+
+To generate the base64 auth string:
+```bash
+echo -n "username:password" | base64
+```
+
+#### GitHub Actions Build
+
+For automated builds, set the `QUAY_AUTH_JSON` GitHub secret with the entire `auth.json` content. The workflow will create the file automatically during builds.
 
 ### Testing in a VM
 
