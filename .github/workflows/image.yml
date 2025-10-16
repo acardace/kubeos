@@ -50,12 +50,13 @@ jobs:
           sudo apt-get install -y yq
 
       - name: Create auth.json from secret
-        if: ${{ secrets.QUAY_AUTH_JSON != '' }}
         env:
           QUAY_AUTH_JSON: ${{ secrets.QUAY_AUTH_JSON }}
         run: |
-          mkdir -p rootfs/usr/lib/ostree
-          echo "$QUAY_AUTH_JSON" > rootfs/usr/lib/ostree/auth.json
+          if [ -n "$QUAY_AUTH_JSON" ]; then
+            mkdir -p rootfs/usr/lib/ostree
+            echo "$QUAY_AUTH_JSON" > rootfs/usr/lib/ostree/auth.json
+          fi
 
       - name: Extract build configuration
         id: config
