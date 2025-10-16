@@ -16,7 +16,7 @@ SCRIPT_DIR="$(dirname "$0")"
 REPO_ROOT="${SCRIPT_DIR}/.."
 
 # Default config file (production)
-CONFIG_FILE="${REPO_ROOT}/build-config.yaml"
+CONFIG_FILE="${REPO_ROOT}/config/build-config.yaml"
 
 # Parse arguments
 CUSTOM_TAG=""
@@ -26,7 +26,7 @@ SKIP_PUSH=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --test)
-            CONFIG_FILE="${REPO_ROOT}/build-config-test.yaml"
+            CONFIG_FILE="${REPO_ROOT}/config/build-config-test.yaml"
             shift
             ;;
         --config)
