@@ -41,6 +41,7 @@ RUN dnf remove -y \
         realtek-firmware \
         linux-firmware \
         systemd-networkd \
+        shim-x64 \
         cri-o \
         kubeadm-${KUBERNETES_VERSION} \
         kubelet-${KUBERNETES_VERSION} \
