@@ -11,7 +11,7 @@ on:
       - main
     paths:
       - 'Containerfile'
-      - 'build-config.yaml'
+      - 'config/build-config.yaml'
       - 'rootfs/**'
       - 'scripts/**'
       - '.github/workflows/image.yml'
@@ -20,7 +20,7 @@ on:
       - main
     paths:
       - 'Containerfile'
-      - 'build-config.yaml'
+      - 'config/build-config.yaml'
       - 'rootfs/**'
       - 'scripts/**'
       - '.github/workflows/image.yml'
@@ -52,14 +52,14 @@ jobs:
       - name: Extract build configuration
         id: config
         run: |
-          KUBERNETES_VERSION=$(yq -r '.kubernetes_version' build-config.yaml)
-          SUBNET_PREFIX=$(yq -r '.network.subnet_prefix' build-config.yaml)
-          NODE_IP=$(yq -r '.network.node_ip' build-config.yaml)
-          GATEWAY_IP=$(yq -r '.network.gateway_ip' build-config.yaml)
-          DNS_IP=$(yq -r '.network.dns_ip' build-config.yaml)
-          CLUSTER_NAME=$(yq -r '.network.cluster_name' build-config.yaml)
-          BACKUP_DISK=$(yq -r '.disks.backup' build-config.yaml)
-          MEDIA_DISK=$(yq -r '.disks.media' build-config.yaml)
+          KUBERNETES_VERSION=$(yq -r '.kubernetes_version' config/build-config.yaml)
+          SUBNET_PREFIX=$(yq -r '.network.subnet_prefix' config/build-config.yaml)
+          NODE_IP=$(yq -r '.network.node_ip' config/build-config.yaml)
+          GATEWAY_IP=$(yq -r '.network.gateway_ip' config/build-config.yaml)
+          DNS_IP=$(yq -r '.network.dns_ip' config/build-config.yaml)
+          CLUSTER_NAME=$(yq -r '.network.cluster_name' config/build-config.yaml)
+          BACKUP_DISK=$(yq -r '.disks.backup' config/build-config.yaml)
+          MEDIA_DISK=$(yq -r '.disks.media' config/build-config.yaml)
 
           echo "kubernetes_version=${KUBERNETES_VERSION}" >> $GITHUB_OUTPUT
           echo "subnet_prefix=${SUBNET_PREFIX}" >> $GITHUB_OUTPUT
