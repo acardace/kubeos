@@ -1,2 +1,0 @@
-# Custom kernel arguments
-kargs = ["rootflags=rw", "mitigations=off", "-quiet"]
