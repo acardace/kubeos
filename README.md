@@ -116,13 +116,13 @@ make test-clean
 ```
 
 The test script:
-- Builds image with test network (10.99.16.0/24)
-- Creates isolated libvirt network (no production access)
+- Builds image with test network (192.168.122.0/24)
+- Uses default libvirt network with VLAN 2 configuration
 - Deploys VM with Fedora CoreOS → switches to bootc image
 - Configures VLAN-aware bridge for networking
 - Waits for Kubernetes to initialize
 
-**VM access**: `ssh core@10.99.16.7` (password: `debug`)
+**VM access**: `ssh core@192.168.122.50` (password: `debug`)
 
 ### Deploying to Production
 

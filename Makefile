@@ -45,11 +45,11 @@ test:
 
 # SSH into test VM
 test-ssh:
-	@ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@10.99.16.7
+	@ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.122.50
 
 # Copy kubeconfig from test VM
 test-kubeconfig:
-	@scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@10.99.16.7:/var/home/core/.kube/config kubeconfig
+	@scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.122.50:/var/home/core/.kube/config kubeconfig
 	@echo "Kubeconfig copied to ./kubeconfig"
 
 # Clean up test environment

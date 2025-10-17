@@ -229,5 +229,16 @@ else
 fi
 echo ""
 
+echo "To install this image directly to disk:"
+echo "  sudo podman run \\"
+echo "    --rm --privileged \\"
+echo "    --pid=host \\"
+echo "    -v /dev:/dev \\"
+echo "    -v /var/lib/containers:/var/lib/containers \\"
+echo "    --security-opt label=type:unconfined_t \\"
+echo "    ${REMOTE_IMAGE} \\"
+echo "    bootc install to-disk /path/to/disk"
+echo ""
+
 # Output image name for other scripts to consume
 echo "${REMOTE_IMAGE}"

@@ -58,8 +58,8 @@ check "VLAN interface exists" ip link show vlan2
 check "VLAN has IP address" ip addr show vlan2 | grep -q "inet "
 if ip addr show vlan2 | grep -q "192.168.16.7"; then
     echo -e "${BLUE}[INFO]${NC} Node IP: 192.168.16.7 (production)"
-elif ip addr show vlan2 | grep -q "10.99.16.7"; then
-    echo -e "${BLUE}[INFO]${NC} Node IP: 10.99.16.7 (test)"
+elif ip addr show vlan2 | grep -q "192.168.122.50"; then
+    echo -e "${BLUE}[INFO]${NC} Node IP: 192.168.122.50 (test)"
 else
     echo -e "${YELLOW}[WARN]${NC} Unexpected IP on vlan2"
 fi
