@@ -18,6 +18,7 @@ sudo ip link set ${BRIDGE_NAME} type bridge vlan_filtering 0 2>/dev/null
 
 # Restore VLAN 1 as default
 sudo bridge vlan add vid 1 dev ${BRIDGE_NAME} self pvid untagged 2>/dev/null || true
+sudo bridge vlan del vid 2 dev ${BRIDGE_NAME} self 2>/dev/null || true
 
 echo -e "${GREEN}✓ Default VLAN configuration restored on ${BRIDGE_NAME}${NC}"
 
