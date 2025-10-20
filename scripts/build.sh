@@ -141,6 +141,9 @@ echo ""
 echo -e "${YELLOW}[1/3] Building container image...${NC}"
 cd "${REPO_ROOT}"
 
+# Get git commit hash
+GIT_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+
 BUILD_ARGS="--build-arg KUBERNETES_VERSION=${KUBERNETES_VERSION} \
     --build-arg SUBNET_PREFIX=${SUBNET_PREFIX} \
     --build-arg NODE_IP=${NODE_IP} \
@@ -148,7 +151,8 @@ BUILD_ARGS="--build-arg KUBERNETES_VERSION=${KUBERNETES_VERSION} \
     --build-arg DNS_IP=${DNS_IP} \
     --build-arg CLUSTER_NAME=${CLUSTER_NAME} \
     --build-arg BACKUP_DISK=${BACKUP_DISK} \
-    --build-arg MEDIA_DISK=${MEDIA_DISK}"
+    --build-arg MEDIA_DISK=${MEDIA_DISK} \
+    --build-arg GIT_COMMIT=${GIT_COMMIT}"
 
 podman build ${BUILD_ARGS} -t "${LOCAL_IMAGE}" .
 echo -e "${GREEN}✓ Build complete${NC}"

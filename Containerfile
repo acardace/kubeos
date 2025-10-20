@@ -2,6 +2,10 @@ FROM quay.io/fedora/fedora-bootc:latest
 
 LABEL bootc.image-description="Kubernetes OS (Fedora Bootc)"
 
+# Git commit (should be set at build time)
+ARG GIT_COMMIT=unknown
+LABEL git.commit="${GIT_COMMIT}"
+
 # Kubernetes version (can be overridden for testing upgrades)
 ARG KUBERNETES_VERSION=1.34.1
 

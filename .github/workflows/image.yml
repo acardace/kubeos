@@ -98,6 +98,7 @@ jobs:
             CLUSTER_NAME=${{ steps.config.outputs.cluster_name }}
             BACKUP_DISK=${{ steps.config.outputs.backup_disk }}
             MEDIA_DISK=${{ steps.config.outputs.media_disk }}
+            GIT_COMMIT=${{ github.sha }}
 
       - name: Push image to Quay.io
         uses: redhat-actions/push-to-registry@v2
