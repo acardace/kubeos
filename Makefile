@@ -67,4 +67,5 @@ test-verify:
 # Copy kubeconfig from production cluster
 kubeconfig:
 	@scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.16.7:/var/home/core/.kube/config kubeconfig
+	@kubectl --kubeconfig=./kubeconfig config set-context --current --namespace apps
 	@echo "Kubeconfig copied to ./kubeconfig"
