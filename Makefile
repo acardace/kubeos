@@ -1,6 +1,6 @@
 # Makefile for KubeOS - Fedora bootc Kubernetes image
 
-.PHONY: help build build-test test test-ssh test-kubeconfig test-clean test-verify cluster-verify kubeconfig
+.PHONY: help build build-test test test-ssh test-kubeconfig test-clean test-verify cluster-verify kubeconfig reboot shutdown
 
 # Default target
 help:
@@ -15,6 +15,8 @@ help:
 	@echo "  make test-verify          - Run full cluster verification on test VM"
 	@echo "  make cluster-verify       - Run full cluster verification on production node"
 	@echo "  make kubeconfig           - Copy kubeconfig from production cluster"
+	@echo "  make shutdown             - Cleanly shutdown cluster (prepare for reboot/poweroff)"
+	@echo "  make reboot               - Cleanly reboot production cluster (avoids 30min delays)"
 	@echo ""
 	@echo "Build options:"
 	@echo "  TAG=<tag>                 Custom tag for production build (default: latest)"
@@ -69,3 +71,11 @@ kubeconfig:
 	@scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null core@192.168.16.7:/var/home/core/.kube/config kubeconfig
 	@kubectl --kubeconfig=./kubeconfig config set-context --current --namespace apps
 	@echo "Kubeconfig copied to ./kubeconfig"
+
+# Clean shutdown of production cluster
+shutdown:
+	@./scripts/shutdown.sh
+
+# Clean reboot of production cluster
+reboot:
+	@./scripts/reboot.sh
