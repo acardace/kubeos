@@ -1,0 +1,6 @@
+# Disable power management for Intel e1000e NICs
+# This prevents the NIC from entering low-power states that can cause
+# network connectivity loss requiring a hard reboot
+#
+# Match e1000e driver and disable PCI power management
+ACTION=="add", SUBSYSTEM=="net", DRIVERS=="e1000e", ATTR{device/power/control}="on"
