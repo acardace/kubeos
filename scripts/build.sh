@@ -11,7 +11,7 @@ NC='\033[0m'
 
 # Configuration
 IMAGE_NAME="kubeos"
-REGISTRY="quay.io/acardace"
+REGISTRY="ghcr.io/acardace"
 SCRIPT_DIR="$(dirname "$0")"
 REPO_ROOT="${SCRIPT_DIR}/.."
 
@@ -192,12 +192,11 @@ if [ "$SKIP_PUSH" = true ]; then
     exit 0
 fi
 
-# Step 3: Login to Quay and push
-echo -e "${YELLOW}[3/3] Logging into Quay.io and pushing...${NC}"
-if ! podman login quay.io --get-login &>/dev/null; then
-    QUAY_USER=$(bw get item quay.io | jq -r '.login.username')
-    QUAY_PASS=$(bw get item quay.io | jq -r '.login.password')
-    echo "${QUAY_PASS}" | podman login -u "${QUAY_USER}" --password-stdin quay.io
+# Step 3: Login to GHCR and push
+echo -e "${YELLOW}[3/3] Logging into ghcr.io and pushing...${NC}"
+if ! podman login ghcr.io --get-login &>/dev/null; then
+    GHCR_TOKEN=$(gh auth token)
+    echo "${GHCR_TOKEN}" | podman login -u acardace --password-stdin ghcr.io
     echo -e "${GREEN}✓ Logged in${NC}"
 else
     echo -e "${BLUE}Already logged in${NC}"
@@ -224,9 +223,8 @@ echo ""
 if [ "$MODE" = "production" ]; then
     echo "To deploy this image:"
     echo "  1. Boot server from Fedora CoreOS live ISO"
-    echo "  2. Login to Quay: podman login quay.io"
-    echo "  3. Switch: sudo bootc switch ${REMOTE_IMAGE}"
-    echo "  4. Reboot: sudo systemctl reboot"
+    echo "  2. Switch: sudo bootc switch ${REMOTE_IMAGE}"
+    echo "  3. Reboot: sudo systemctl reboot"
 else
     echo "Test image ready for VM deployment"
     echo "Use: ./scripts/test-vm.sh (will use this image)"
