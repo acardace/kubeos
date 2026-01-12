@@ -51,7 +51,7 @@ echo ""
 
 echo "=== Post-Reboot Recovery ==="
 
-echo "[1/6] Waiting for Kubernetes API..."
+echo "[1/8] Waiting for Kubernetes API..."
 for i in {1..60}; do
     if kubectl cluster-info &>/dev/null; then
         echo "  Kubernetes API is responding"
@@ -62,16 +62,46 @@ for i in {1..60}; do
 done
 echo ""
 
-echo "[2/6] Scaling up all Rook-Ceph deployments..."
-ROOK_DEPLOYMENTS=$(kubectl get deployments -n rook-ceph -o json | jq -r '.items[] | select(.spec.replicas == 0) | .metadata.name')
-for deploy in $ROOK_DEPLOYMENTS; do
+echo "[2/8] Scaling up Rook-Ceph infrastructure (excluding OSDs)..."
+ROOK_INFRA_DEPLOYMENTS=$(kubectl get deployments -n rook-ceph -o json | jq -r '.items[] | select(.spec.replicas == 0) | select(.metadata.name | test("rook-ceph-osd-") | not) | .metadata.name')
+for deploy in $ROOK_INFRA_DEPLOYMENTS; do
     echo "  Scaling up deployment/$deploy to 1..."
     kubectl scale deployment/$deploy -n rook-ceph --replicas=1 --timeout=60s || echo "  Warning: Failed to scale $deploy"
 done
 echo ""
 
-echo "[3/6] Waiting for Ceph cluster to be healthy..."
-for i in {1..120}; do
+echo "[3/8] Waiting for Rook operator to be ready..."
+kubectl -n rook-ceph rollout status deployment/rook-ceph-operator --timeout=300s || echo "  Warning: Operator rollout timed out"
+echo ""
+
+echo "[4/8] Scaling up OSDs sequentially (to reduce I/O contention)..."
+OSD_DEPLOYMENTS=$(kubectl get deployments -n rook-ceph -o json | jq -r '.items[] | select(.spec.replicas == 0) | select(.metadata.name | test("rook-ceph-osd-")) | .metadata.name' | sort)
+TOTAL_OSD_COUNT=$(echo "$OSD_DEPLOYMENTS" | grep -c . || echo "0")
+CURRENT_OSD=0
+for osd_deploy in $OSD_DEPLOYMENTS; do
+    CURRENT_OSD=$((CURRENT_OSD + 1))
+    OSD_ID=$(echo "$osd_deploy" | sed 's/rook-ceph-osd-\([0-9]*\).*/\1/')
+    echo "  [$CURRENT_OSD/$TOTAL_OSD_COUNT] Scaling up $osd_deploy..."
+    kubectl scale deployment/$osd_deploy -n rook-ceph --replicas=1 --timeout=60s || echo "    Warning: Failed to scale $osd_deploy"
+
+    # Wait for this specific OSD to be up before starting next one
+    echo "    Waiting for OSD.$OSD_ID to be up..."
+    for i in {1..120}; do
+        OSD_UP=$(kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd dump 2>/dev/null | grep "^osd\.$OSD_ID " | grep -c " up " || echo "0")
+        if [ "$OSD_UP" = "1" ]; then
+            echo "    OSD.$OSD_ID is up"
+            break
+        fi
+        if [ $((i % 12)) -eq 0 ]; then
+            echo "    Still waiting for OSD.$OSD_ID... (attempt $i/120)"
+        fi
+        sleep 5
+    done
+done
+echo ""
+
+echo "[5/8] Waiting for Ceph cluster to be healthy..."
+for i in {1..60}; do
     HEALTH=$(kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph health 2>/dev/null | grep -o "HEALTH_OK\|HEALTH_WARN" || echo "UNKNOWN")
     if [ "$HEALTH" = "HEALTH_OK" ]; then
         echo "  Ceph is HEALTH_OK"
@@ -80,19 +110,19 @@ for i in {1..120}; do
         echo "  Ceph is HEALTH_WARN (acceptable)"
         break
     fi
-    echo "  Waiting for Ceph... (status: $HEALTH, attempt $i/120)"
+    echo "  Waiting for Ceph... (status: $HEALTH, attempt $i/60)"
     sleep 5
 done
 echo ""
 
-echo "[4/6] Unsetting Ceph flags..."
+echo "[6/8] Unsetting Ceph flags..."
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset noout || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset norebalance || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset noscrub || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset nodeep-scrub || true
 echo ""
 
-echo "[5/6] Scaling up all Deployments and StatefulSets in the cluster..."
+echo "[7/8] Scaling up all Deployments and StatefulSets in the cluster..."
 # Get all namespaces except rook-ceph (already done)
 ALL_NAMESPACES=$(kubectl get namespaces -o json | jq -r '.items[].metadata.name' | grep -v -E '^rook-ceph$')
 
@@ -119,7 +149,7 @@ for ns in $ALL_NAMESPACES; do
 done
 echo ""
 
-echo "[6/6] Resuming Flux reconciliation..."
+echo "[8/8] Resuming Flux reconciliation..."
 flux resume kustomization --all || echo "Warning: Failed to resume kustomizations"
 flux resume helmrelease --all || echo "Warning: Failed to resume helmreleases"
 echo ""
