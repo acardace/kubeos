@@ -26,7 +26,7 @@ apiServer:
     - 192.168.16.7
   extraArgs:
     - name: feature-gates
-      value: "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+      value: "UserNamespacesSupport=true"
 controllerManager:
   extraArgs:
     - name: bind-address
@@ -54,5 +54,4 @@ rotateCertificates: true
 seccompDefault: true
 featureGates:
   UserNamespacesSupport: true
-  UserNamespacesPodSecurityStandards: true
 containerRuntimeEndpoint: unix:///var/run/crio/crio.sock
