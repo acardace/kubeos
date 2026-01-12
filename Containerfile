@@ -20,8 +20,10 @@ ARG CLUSTER_NAME=home
 ARG BACKUP_DISK=/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y0SS50Y6-part1
 ARG MEDIA_DISK=/dev/disk/by-id/ata-WDC_WD5000LPLX-66ZNTT1_WD-WXJ1A56K9D2J-part1
 
-# Copy Kubernetes repository configuration first (needed for package installation)
+# Copy Kubernetes repository configuration and set version (needed for package installation)
 COPY rootfs/etc/yum.repos.d/kubernetes.repo /etc/yum.repos.d/kubernetes.repo
+RUN K8S_REPO_VERSION=$(echo ${KUBERNETES_VERSION} | cut -d. -f1,2) \
+    && sed -i "s|KUBERNETES_RPM_REPO_VERSION_PLACEHOLDER|v${K8S_REPO_VERSION}|g" /etc/yum.repos.d/kubernetes.repo
 
 # Install all packages in a single layer for better caching
 # - Remove unnecessary packages to reduce size

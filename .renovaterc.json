@@ -3,47 +3,15 @@
   "extends": [
     "config:recommended"
   ],
-  "kubernetes": {
-    "managerFilePatterns": [
-      "/^rootfs/etc/kubernetes/manifests/.+\\.yaml$/"
-    ]
-  },
   "customManagers": [
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^Containerfile$/"
-      ],
-      "matchStrings": [
-        "ARG KUBERNETES_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)",
-        "kubeadm-(?<currentValue>\\d+\\.\\d+\\.\\d+)",
-        "kubelet-(?<currentValue>\\d+\\.\\d+\\.\\d+)",
-        "kubectl-(?<currentValue>\\d+\\.\\d+\\.\\d+)"
-      ],
-      "depNameTemplate": "kubernetes/kubernetes",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/^rootfs/etc/yum\\.repos\\.d/kubernetes\\.repo$/"
-      ],
-      "matchStrings": [
-        "baseurl=https://pkgs\\.k8s\\.io/core:/stable:/v(?<currentValue>\\d+\\.\\d+)/rpm/",
-        "gpgkey=https://pkgs\\.k8s\\.io/core:/stable:/v(?<currentValue>\\d+\\.\\d+)/rpm/"
-      ],
-      "depNameTemplate": "kubernetes/kubernetes",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver",
-      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+)"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
+        "/^Containerfile$/",
         "/^config/build-config.*\\.yaml$/"
       ],
       "matchStrings": [
+        "ARG KUBERNETES_VERSION=(?<currentValue>\\d+\\.\\d+\\.\\d+)",
         "kubernetes_version: \"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "kubernetes/kubernetes",
