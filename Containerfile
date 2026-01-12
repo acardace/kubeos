@@ -78,11 +78,12 @@ RUN chmod 0644 /usr/share/ssh-keys/core \
     && sed -i "s|Address=192.168.16.7/24|Address=${NODE_IP}/24|g" /usr/lib/systemd/network/30-vlan2.network \
     && sed -i "s|Gateway=192.168.16.1|Gateway=${GATEWAY_IP}|g" /usr/lib/systemd/network/30-vlan2.network \
     && sed -i "s|DNS=192.168.16.1|DNS=${DNS_IP}|g" /usr/lib/systemd/network/30-vlan2.network \
-    && sed -i "s|kubernetesVersion: v1.34.1|kubernetesVersion: v${KUBERNETES_VERSION}|g" /etc/kubernetes/kubeadm-config.yaml \
+    && sed -i "s|KUBERNETES_VERSION_PLACEHOLDER|v${KUBERNETES_VERSION}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|advertiseAddress: 192.168.16.7|advertiseAddress: ${NODE_IP}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "/name: node-ip/,/value:/ s|value: 192.168.16.7|value: ${NODE_IP}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|controlPlaneEndpoint: \"192.168.16.7:6443\"|controlPlaneEndpoint: \"${NODE_IP}:6443\"|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|clusterName: home|clusterName: ${CLUSTER_NAME}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|- 192.168.16.7|- ${NODE_IP}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|BACKUP_DISK_PLACEHOLDER|${BACKUP_DISK}|g" /usr/lib/systemd/system/var-mnt-backup.mount \
-    && sed -i "s|MEDIA_DISK_PLACEHOLDER|${MEDIA_DISK}|g" /usr/lib/systemd/system/var-mnt-media.mount
+    && sed -i "s|MEDIA_DISK_PLACEHOLDER|${MEDIA_DISK}|g" /usr/lib/systemd/system/var-mnt-media.mount \
+    && sed -i "s|KUBERNETES_VERSION_PLACEHOLDER|${KUBERNETES_VERSION}|g" /usr/lib/os-release

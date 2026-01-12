@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Examples:"
             echo "  $0                                    # Build production image (latest)"
-            echo "  $0 --tag v1.34.1                      # Build production with specific tag"
+            echo "  $0 --tag v1.35.0                      # Build production with specific tag"
             echo "  $0 --test                             # Build test image"
             echo "  $0 --skip-tag                         # Build only, no tag"
             echo "  $0 --skip-push                        # Build and tag, but don't push (CI)"

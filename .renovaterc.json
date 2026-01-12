@@ -41,10 +41,10 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
-        "/^rootfs/etc/kubernetes/kubeadm-config\\.yaml$/"
+        "/^config/build-config.*\\.yaml$/"
       ],
       "matchStrings": [
-        "kubernetesVersion: v(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+        "kubernetes_version: \"(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "depNameTemplate": "kubernetes/kubernetes",
       "datasourceTemplate": "github-releases",
