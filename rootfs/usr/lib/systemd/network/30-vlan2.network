@@ -5,3 +5,4 @@ Name=vlan2
 Address=192.168.16.7/24
 Gateway=192.168.16.1
 DNS=192.168.16.1
+Domains=lan
