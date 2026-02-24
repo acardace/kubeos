@@ -9,7 +9,7 @@ network:
   subnet_prefix: "192.168.16"
   node_ip: "192.168.16.7"
   gateway_ip: "192.168.16.1"
-  dns_ip: "1.1.1.1"
+  dns_ip: "192.168.16.1"
   cluster_name: "home"
 
 # Disk configuration (hardware-specific paths)
