@@ -115,15 +115,16 @@ for osd_deploy in $OSD_DEPLOYMENTS; do
     kubectl scale deployment/$osd_deploy -n rook-ceph --replicas=1 --timeout=60s || echo "    Warning: Failed to scale $osd_deploy"
 
     # Wait for this specific OSD to be up before starting next one
-    echo "    Waiting for OSD.$OSD_ID to be up..."
-    for i in {1..120}; do
+    # bluefs-bdev-expand on HDDs takes ~15 min, plus OSD startup ~5 min = ~20 min total
+    echo "    Waiting for OSD.$OSD_ID to be up (up to 20 min for HDD journal replay)..."
+    for i in {1..240}; do
         OSD_UP=$(kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd dump 2>/dev/null | grep "^osd\.$OSD_ID " | grep -c " up " || echo "0")
         if [ "$OSD_UP" = "1" ]; then
             echo "    OSD.$OSD_ID is up"
             break
         fi
         if [ $((i % 12)) -eq 0 ]; then
-            echo "    Still waiting for OSD.$OSD_ID... (attempt $i/120)"
+            echo "    Still waiting for OSD.$OSD_ID... ($((i * 5 / 60)) min elapsed)"
         fi
         sleep 5
     done
