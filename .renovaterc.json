@@ -48,8 +48,7 @@
         "kubernetes/kubernetes"
       ],
       "groupName": "kubernetes",
-      "description": "Group all Kubernetes updates together. Note: GitHub releases may appear before RPM packages are available at pkgs.k8s.io. Verify RPM availability before merging.",
-      "minimumReleaseAge": "7 days",
+      "description": "Group all Kubernetes updates together.",
       "schedule": [
         "before 3am on Monday"
       ]
