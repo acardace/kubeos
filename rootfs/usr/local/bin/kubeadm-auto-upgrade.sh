@@ -89,7 +89,7 @@ if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes ; then
 
     # Update Flannel to ensure compatibility with new Kubernetes version
     log "Updating Flannel CNI..."
-    if kubectl --kubeconfig="${KUBECONFIG}" apply -f https://github.com/flannel-io/flannel/releases/download/v0.28.0/kube-flannel.yml; then
+    if kubectl --kubeconfig="${KUBECONFIG}" apply -f https://github.com/flannel-io/flannel/releases/download/v0.28.4/kube-flannel.yml; then
         log "✓ Flannel updated"
     else
         log "WARNING: Flannel update failed, but Kubernetes upgrade succeeded"
