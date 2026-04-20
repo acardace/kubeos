@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "mode": "full",
   "customManagers": [
     {
       "customType": "regex",
