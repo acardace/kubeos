@@ -51,7 +51,7 @@ echo ""
 
 echo "=== Post-Reboot Recovery ==="
 
-echo "[1/8] Waiting for Kubernetes API..."
+echo "[1/9] Waiting for Kubernetes API..."
 for i in {1..60}; do
     if kubectl cluster-info &>/dev/null; then
         echo "  Kubernetes API is responding"
@@ -62,7 +62,37 @@ for i in {1..60}; do
 done
 echo ""
 
-echo "[2/8] Scaling up Rook-Ceph infrastructure (excluding OSDs)..."
+echo "[2/9] Waiting for kubeadm-auto-upgrade to complete..."
+for i in {1..120}; do
+    UPGRADE_STATUS=$(ssh ${SSH_OPTS} ${NODE_USER}@${NODE_IP} "systemctl is-active kubeadm-auto-upgrade.service 2>/dev/null" || echo "unknown")
+    if [ "$UPGRADE_STATUS" = "active" ]; then
+        # RemainAfterExit=yes means "active" = completed successfully
+        echo "  kubeadm-auto-upgrade completed successfully"
+        UPGRADE_RESULT=$(ssh ${SSH_OPTS} ${NODE_USER}@${NODE_IP} "sudo journalctl -u kubeadm-auto-upgrade.service --no-pager -n 3 2>/dev/null" || true)
+        echo "  Last log: $UPGRADE_RESULT"
+        break
+    elif [ "$UPGRADE_STATUS" = "activating" ]; then
+        if [ $((i % 6)) -eq 0 ]; then
+            echo "  Upgrade still running... (attempt $i/120)"
+        fi
+    elif [ "$UPGRADE_STATUS" = "failed" ]; then
+        echo "  WARNING: kubeadm-auto-upgrade failed!"
+        ssh ${SSH_OPTS} ${NODE_USER}@${NODE_IP} "sudo journalctl -u kubeadm-auto-upgrade.service --no-pager -n 20 2>/dev/null" || true
+        echo "  Continuing with recovery anyway..."
+        break
+    elif [ "$UPGRADE_STATUS" = "inactive" ]; then
+        echo "  kubeadm-auto-upgrade is inactive (no upgrade needed)"
+        break
+    else
+        if [ $((i % 6)) -eq 0 ]; then
+            echo "  Waiting for upgrade service... (status: $UPGRADE_STATUS, attempt $i/120)"
+        fi
+    fi
+    sleep 5
+done
+echo ""
+
+echo "[3/9] Scaling up Rook-Ceph infrastructure (excluding OSDs)..."
 ROOK_INFRA_DEPLOYMENTS=$(kubectl get deployments -n rook-ceph -o json | jq -r '.items[] | select(.spec.replicas == 0) | select(.metadata.name | test("rook-ceph-osd-") | not) | .metadata.name')
 for deploy in $ROOK_INFRA_DEPLOYMENTS; do
     echo "  Scaling up deployment/$deploy to 1..."
@@ -70,11 +100,11 @@ for deploy in $ROOK_INFRA_DEPLOYMENTS; do
 done
 echo ""
 
-echo "[3/8] Waiting for Rook operator to be ready..."
+echo "[4/9] Waiting for Rook operator to be ready..."
 kubectl -n rook-ceph rollout status deployment/rook-ceph-operator --timeout=300s || echo "  Warning: Operator rollout timed out"
 echo ""
 
-echo "[4/8] Scaling up OSDs sequentially (to reduce I/O contention)..."
+echo "[5/9] Scaling up OSDs sequentially (to reduce I/O contention)..."
 OSD_DEPLOYMENTS=$(kubectl get deployments -n rook-ceph -o json | jq -r '.items[] | select(.spec.replicas == 0) | select(.metadata.name | test("rook-ceph-osd-")) | .metadata.name' | sort)
 TOTAL_OSD_COUNT=$(echo "$OSD_DEPLOYMENTS" | grep -c . || echo "0")
 CURRENT_OSD=0
@@ -100,7 +130,7 @@ for osd_deploy in $OSD_DEPLOYMENTS; do
 done
 echo ""
 
-echo "[5/8] Waiting for Ceph cluster to be healthy..."
+echo "[6/9] Waiting for Ceph cluster to be healthy..."
 for i in {1..60}; do
     HEALTH=$(kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph health 2>/dev/null | grep -o "HEALTH_OK\|HEALTH_WARN" || echo "UNKNOWN")
     if [ "$HEALTH" = "HEALTH_OK" ]; then
@@ -115,14 +145,14 @@ for i in {1..60}; do
 done
 echo ""
 
-echo "[6/8] Unsetting Ceph flags..."
+echo "[7/9] Unsetting Ceph flags..."
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset noout || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset norebalance || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset noscrub || true
 kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd unset nodeep-scrub || true
 echo ""
 
-echo "[7/8] Scaling up all Deployments and StatefulSets in the cluster..."
+echo "[8/9] Scaling up all Deployments and StatefulSets in the cluster..."
 # Get all namespaces except rook-ceph (already done)
 ALL_NAMESPACES=$(kubectl get namespaces -o json | jq -r '.items[].metadata.name' | grep -v -E '^rook-ceph$')
 
@@ -149,7 +179,7 @@ for ns in $ALL_NAMESPACES; do
 done
 echo ""
 
-echo "[8/8] Resuming Flux reconciliation..."
+echo "[9/9] Resuming Flux reconciliation..."
 flux resume kustomization --all || echo "Warning: Failed to resume kustomizations"
 flux resume helmrelease --all || echo "Warning: Failed to resume helmreleases"
 echo ""
