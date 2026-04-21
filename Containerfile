@@ -88,4 +88,6 @@ RUN chmod 0644 /usr/share/ssh-keys/core \
     && sed -i "s|- 192.168.16.7|- ${NODE_IP}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|BACKUP_DISK_PLACEHOLDER|${BACKUP_DISK}|g" /usr/lib/systemd/system/var-mnt-backup.mount \
     && sed -i "s|MEDIA_DISK_PLACEHOLDER|${MEDIA_DISK}|g" /usr/lib/systemd/system/var-mnt-media.mount \
+    && FEDORA_VERSION=$(rpm -E %fedora) \
+    && sed -i "s|FEDORA_VERSION_PLACEHOLDER|${FEDORA_VERSION}|g" /usr/lib/os-release \
     && sed -i "s|KUBERNETES_VERSION_PLACEHOLDER|${KUBERNETES_VERSION}|g" /usr/lib/os-release
