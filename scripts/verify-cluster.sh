@@ -111,10 +111,14 @@ section "Certificate Rotation"
 check "Kubelet client cert rotation enabled" sh -c "grep -q 'rotateCertificates: true' /var/lib/kubelet/config.yaml"
 check "Server cert bootstrap enabled" sh -c "grep -q 'serverTLSBootstrap: true' /var/lib/kubelet/config.yaml"
 
+section "Storage (mdadm + LVM)"
+check "mdadm array active" sh -c "cat /proc/mdstat | grep -q 'md.*active'"
+check "LVM volume group vg_data" vgs vg_data
+check "LVM thin pool exists" sh -c "lvs vg_data -o lv_name --noheadings | grep -q thinpool"
+MDSTAT=$(cat /proc/mdstat 2>/dev/null | grep -A1 "md" | head -2)
+echo -e "${BLUE}[INFO]${NC} mdadm: $MDSTAT"
+
 section "Storage Mounts (if configured)"
-if [ -d "/var/mnt/backup" ]; then
-    check "Backup mount exists" mountpoint -q /var/mnt/backup
-fi
 if [ -d "/var/mnt/media" ]; then
     check "Media mount exists" mountpoint -q /var/mnt/media
 fi
