@@ -14,5 +14,4 @@ network:
 
 # Disk configuration (virtual disks for test VM)
 disks:
-  backup: "/dev/vdb1"
   media: "/dev/vdc1"

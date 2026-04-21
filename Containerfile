@@ -17,7 +17,6 @@ ARG DNS_IP=192.168.16.1
 ARG CLUSTER_NAME=home
 
 # Disk configuration (can be overridden for testing)
-ARG BACKUP_DISK=/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y0SS50Y6-part1
 ARG MEDIA_DISK=/dev/disk/by-id/ata-WDC_WD5000LPLX-66ZNTT1_WD-WXJ1A56K9D2J-part1
 
 # Copy Kubernetes repository configuration and set version (needed for package installation)
@@ -90,7 +89,6 @@ RUN chmod 0644 /usr/share/ssh-keys/core \
     && sed -i "s|controlPlaneEndpoint: \"192.168.16.7:6443\"|controlPlaneEndpoint: \"${NODE_IP}:6443\"|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|clusterName: home|clusterName: ${CLUSTER_NAME}|g" /etc/kubernetes/kubeadm-config.yaml \
     && sed -i "s|- 192.168.16.7|- ${NODE_IP}|g" /etc/kubernetes/kubeadm-config.yaml \
-    && sed -i "s|BACKUP_DISK_PLACEHOLDER|${BACKUP_DISK}|g" /usr/lib/systemd/system/var-mnt-backup.mount \
     && sed -i "s|MEDIA_DISK_PLACEHOLDER|${MEDIA_DISK}|g" /usr/lib/systemd/system/var-mnt-media.mount \
     && FEDORA_VERSION=$(rpm -E %fedora) \
     && sed -i "s|FEDORA_VERSION_PLACEHOLDER|${FEDORA_VERSION}|g" /usr/lib/os-release \

@@ -77,7 +77,6 @@ echo -e "${BLUE}[INFO]${NC} Kubernetes version: $KUBE_VERSION"
 
 section "Node Labels"
 check "Worker role label" sh -c "kubectl get $NODE_NAME -o jsonpath='{.metadata.labels}' | grep -q 'node-role.kubernetes.io/worker'"
-check "Disk backup label" sh -c "kubectl get $NODE_NAME -o jsonpath='{.metadata.labels}' | grep -q 'home.k8s/disk-backup'"
 check "Disk media label" sh -c "kubectl get $NODE_NAME -o jsonpath='{.metadata.labels}' | grep -q 'home.k8s/disk-media'"
 check "Coral TPU label" sh -c "kubectl get $NODE_NAME -o jsonpath='{.metadata.labels}' | grep -q 'home.k8s/device.*coral-tpu'"
 check "iGPU label" sh -c "kubectl get $NODE_NAME -o jsonpath='{.metadata.labels}' | grep -q 'home.k8s/device-igpu'"

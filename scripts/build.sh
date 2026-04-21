@@ -96,7 +96,6 @@ NODE_IP=$(yq eval '.network.node_ip' "$CONFIG_FILE")
 GATEWAY_IP=$(yq eval '.network.gateway_ip' "$CONFIG_FILE")
 DNS_IP=$(yq eval '.network.dns_ip' "$CONFIG_FILE")
 CLUSTER_NAME=$(yq eval '.network.cluster_name' "$CONFIG_FILE")
-BACKUP_DISK=$(yq eval '.disks.backup' "$CONFIG_FILE")
 MEDIA_DISK=$(yq eval '.disks.media' "$CONFIG_FILE")
 
 # Determine if this is a test build based on config file name
@@ -150,7 +149,6 @@ BUILD_ARGS="--build-arg KUBERNETES_VERSION=${KUBERNETES_VERSION} \
     --build-arg GATEWAY_IP=${GATEWAY_IP} \
     --build-arg DNS_IP=${DNS_IP} \
     --build-arg CLUSTER_NAME=${CLUSTER_NAME} \
-    --build-arg BACKUP_DISK=${BACKUP_DISK} \
     --build-arg MEDIA_DISK=${MEDIA_DISK} \
     --build-arg GIT_COMMIT=${GIT_COMMIT}"
 

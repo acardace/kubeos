@@ -14,5 +14,4 @@ network:
 
 # Disk configuration (hardware-specific paths)
 disks:
-  backup: "/dev/disk/by-id/ata-WDC_WD10EZEX-08WN4A0_WD-WCC6Y0SS50Y6-part1"
   media: "/dev/disk/by-id/ata-WDC_WD5000LPLX-66ZNTT1_WD-WXJ1A56K9D2J-part1"
