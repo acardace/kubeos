@@ -59,6 +59,7 @@ RUN dnf remove -y \
         bash-completion \
         distrobox \
         smartmontools \
+        gdisk \
         jq \
     && dnf clean all \
     && rm -rf /usr/share/man/* \
