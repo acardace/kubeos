@@ -58,6 +58,8 @@ RUN dnf remove -y \
         xfsprogs \
         bash-completion \
         distrobox \
+        mdadm \
+        lvm2 \
         smartmontools \
         gdisk \
         jq \
