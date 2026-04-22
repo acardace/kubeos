@@ -34,22 +34,15 @@ echo "[2/3] Scaling down all Deployments and StatefulSets..."
 ALL_NAMESPACES=$(kubectl get namespaces -o json | jq -r '.items[].metadata.name' | grep -v -E '^kube-system$|^kube-public$|^kube-node-lease$|^default$')
 
 for ns in $ALL_NAMESPACES; do
-    DEPLOYMENTS=$(kubectl get deployments -n $ns -o json 2>/dev/null | jq -r '.items[] | select(.spec.replicas > 0) | .metadata.name' || echo "")
-    for deploy in $DEPLOYMENTS; do
-        echo "  Scaling deployment/$deploy -n $ns to 0..."
-        kubectl scale deployment/$deploy -n $ns --replicas=0 --timeout=30s || echo "  Warning: Failed to scale $deploy"
-    done
-
-    STATEFULSETS=$(kubectl get statefulsets -n $ns -o json 2>/dev/null | jq -r '.items[] | select(.spec.replicas > 0) | .metadata.name' || echo "")
-    for sts in $STATEFULSETS; do
-        echo "  Scaling statefulset/$sts -n $ns to 0..."
-        kubectl scale statefulset/$sts -n $ns --replicas=0 --timeout=30s || echo "  Warning: Failed to scale $sts"
-    done
+    kubectl scale --replicas 0 --all deployment -n "$ns" 2>/dev/null || true
+    kubectl scale --replicas 0 --all sts -n "$ns" 2>/dev/null || true
 done
 echo ""
 
 echo "[3/3] Waiting for pods to terminate..."
-sleep 10
+for ns in $ALL_NAMESPACES; do
+    kubectl wait pod --all --for=delete -n "$ns" --timeout=120s 2>/dev/null || true
+done
 
 echo "=== Shutdown Complete ==="
 echo "Cluster is ready for reboot or shutdown"

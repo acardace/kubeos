@@ -50,7 +50,7 @@ echo ""
 
 echo "=== Post-Reboot Recovery ==="
 
-echo "[1/4] Waiting for Kubernetes API..."
+echo "[1/3] Waiting for Kubernetes API..."
 for i in {1..60}; do
     if kubectl cluster-info &>/dev/null; then
         echo "  Kubernetes API is responding"
@@ -61,7 +61,7 @@ for i in {1..60}; do
 done
 echo ""
 
-echo "[2/4] Waiting for kubeadm-auto-upgrade to complete..."
+echo "[2/3] Waiting for kubeadm-auto-upgrade to complete..."
 for i in {1..120}; do
     UPGRADE_STATUS=$(ssh ${SSH_OPTS} ${NODE_USER}@${NODE_IP} "systemctl is-active kubeadm-auto-upgrade.service 2>/dev/null" || echo "unknown")
     if [ "$UPGRADE_STATUS" = "active" ]; then
@@ -91,31 +91,7 @@ for i in {1..120}; do
 done
 echo ""
 
-echo "[3/4] Scaling up all Deployments and StatefulSets..."
-ALL_NAMESPACES=$(kubectl get namespaces -o json | jq -r '.items[].metadata.name' | grep -v -E '^kube-system$|^kube-public$|^kube-node-lease$|^default$')
-
-for ns in $ALL_NAMESPACES; do
-    DEPLOYMENTS=$(kubectl get deployments -n $ns -o json 2>/dev/null | jq -r '.items[] | select(.spec.replicas == 0) | .metadata.name' || echo "")
-    if [ -n "$DEPLOYMENTS" ]; then
-        echo "  Namespace: $ns (Deployments)"
-        for deploy in $DEPLOYMENTS; do
-            echo "    Scaling deployment/$deploy to 1..."
-            kubectl scale deployment/$deploy -n $ns --replicas=1 --timeout=30s || echo "    Warning: Failed to scale $deploy"
-        done
-    fi
-
-    STATEFULSETS=$(kubectl get statefulsets -n $ns -o json 2>/dev/null | jq -r '.items[] | select(.spec.replicas == 0) | .metadata.name' || echo "")
-    if [ -n "$STATEFULSETS" ]; then
-        echo "  Namespace: $ns (StatefulSets)"
-        for sts in $STATEFULSETS; do
-            echo "    Scaling statefulset/$sts to 1..."
-            kubectl scale statefulset/$sts -n $ns --replicas=1 --timeout=30s || echo "    Warning: Failed to scale $sts"
-        done
-    fi
-done
-echo ""
-
-echo "[4/4] Resuming Flux reconciliation..."
+echo "[3/3] Resuming Flux reconciliation..."
 flux resume kustomization --all || echo "Warning: Failed to resume kustomizations"
 flux resume helmrelease --all || echo "Warning: Failed to resume helmreleases"
 echo ""
