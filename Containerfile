@@ -7,7 +7,7 @@ ARG GIT_COMMIT=unknown
 LABEL git.commit="${GIT_COMMIT}"
 
 # Kubernetes version (can be overridden for testing upgrades)
-ARG KUBERNETES_VERSION=1.35.4
+ARG KUBERNETES_VERSION=1.36.0
 
 # Network configuration (can be overridden for testing)
 ARG SUBNET_PREFIX=192.168.16
