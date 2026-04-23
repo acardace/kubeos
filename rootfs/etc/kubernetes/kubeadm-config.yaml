@@ -22,15 +22,10 @@ networking:
 apiServer:
   certSANs:
     - 192.168.16.7
-  extraArgs:
-    - name: feature-gates
-      value: "UserNamespacesSupport=true"
 controllerManager:
   extraArgs:
     - name: bind-address
       value: 0.0.0.0
-    - name: flex-volume-plugin-dir
-      value: /var/lib/kubelet/volumeplugins
 scheduler:
   extraArgs:
     - name: bind-address
@@ -51,6 +46,4 @@ kind: KubeletConfiguration
 serverTLSBootstrap: true
 rotateCertificates: true
 seccompDefault: true
-featureGates:
-  UserNamespacesSupport: true
 containerRuntimeEndpoint: unix:///var/run/crio/crio.sock

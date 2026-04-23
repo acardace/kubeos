@@ -83,8 +83,8 @@ log "Version mismatch detected!"
 log "Will upgrade cluster from ${CLUSTER_VERSION} to ${KUBEADM_VERSION}"
 
 # Perform upgrade
-log "Running: kubeadm upgrade apply v${KUBEADM_VERSION} --yes"
-if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes ; then
+log "Running: kubeadm upgrade apply v${KUBEADM_VERSION} --yes --config=/etc/kubernetes/kubeadm-config.yaml"
+if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes --config=/etc/kubernetes/kubeadm-config.yaml ; then
     log "✓ Cluster upgrade successful"
 
     # Update Flannel to ensure compatibility with new Kubernetes version
