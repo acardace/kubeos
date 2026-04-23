@@ -83,9 +83,14 @@ log "Version mismatch detected!"
 log "Will upgrade cluster from ${CLUSTER_VERSION} to ${KUBEADM_VERSION}"
 
 # Perform upgrade
-log "Running: kubeadm upgrade apply v${KUBEADM_VERSION} --yes --config=/etc/kubernetes/kubeadm-config.yaml"
-if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes --config=/etc/kubernetes/kubeadm-config.yaml ; then
+log "Running: kubeadm upgrade apply v${KUBEADM_VERSION} --yes"
+if kubeadm upgrade apply "v${KUBEADM_VERSION}" --yes ; then
     log "✓ Cluster upgrade successful"
+
+    # Re-upload ClusterConfiguration so the in-cluster ConfigMap stays in sync with the on-disk config
+    log "Uploading kubeadm config..."
+    kubeadm init phase upload-config kubeadm --config=/etc/kubernetes/kubeadm-config.yaml \
+        && log "✓ kubeadm config uploaded" || log "WARNING: Failed to upload kubeadm config"
 
     # Update Flannel to ensure compatibility with new Kubernetes version
     log "Updating Flannel CNI..."
