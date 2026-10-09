@@ -1,0 +1,46 @@
+module redroid-container 1.0;
+
+# Let Android (redroid / Waydroid) boot inside a privileged container on an
+# SELinux-enforcing host.
+#
+# Android's init labels its property files with Android's own SELinux types
+# (e.g. u:object_r:properties_serial:s0). Those types do not exist in the
+# host's targeted policy, so security_context_to_sid() rejects them. The
+# kernel will fall back to security_context_to_sid_force() -- storing the
+# label verbatim without interpreting it -- but only for a process that
+# passes the mac_admin check. Without it, fsetxattr() returns EINVAL and
+# bionic's __system_property_area_init() fails, which init treats as fatal:
+#
+#   init: Failed to initialize property area
+#   avc: denied { mac_admin } for comm="init" capability=33
+#        scontext=system_u:system_r:spc_t:s0 tclass=capability2
+#
+# Scope: spc_t is the "super privileged container" domain, i.e. only
+# containers already started with privileged: true. This grants them the
+# ability to write SELinux labels the host policy does not define; those
+# labels are inert on the host, since nothing in the host policy references
+# them. It does not widen anything for unprivileged (container_t) workloads.
+
+# Second requirement: binder IPC. Android's servicemanager must register
+# itself as the binder context manager (handle 0) before any other Android
+# process can talk to it. The host policy denies this to spc_t, and the
+# denial is dontaudit'd, so it fails silently -- servicemanager logs
+# "Binder ioctl to become context manager failed: Permission denied" and
+# every later client dies with "cannot find target node" / vold never
+# registers / init hangs on "vdc checkpoint markBootAttempt".
+#
+# Captured with dontaudit disabled (semodule -DB):
+#   avc: denied { set_context_mgr } for comm="servicemanager"
+#        scontext=...spc_t:s0 tcontext=...spc_t:s0 tclass=binder
+#
+# Scoped to spc_t talking to itself: this is Android's processes doing IPC
+# among themselves inside the container, not with anything on the host.
+
+require {
+    type spc_t;
+    class capability2 mac_admin;
+    class binder { call transfer set_context_mgr impersonate };
+}
+
+allow spc_t self:capability2 mac_admin;
+allow spc_t self:binder { call transfer set_context_mgr impersonate };

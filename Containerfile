@@ -62,6 +62,7 @@ RUN dnf remove -y \
         smartmontools \
         gdisk \
         jq \
+        checkpolicy \
     && dnf clean all \
     && rm -rf /usr/share/man/* \
     && rm -rf /usr/share/doc/* \
@@ -93,3 +94,16 @@ RUN chmod 0644 /usr/share/ssh-keys/core \
     && FEDORA_VERSION=$(rpm -E %fedora) \
     && sed -i "s|FEDORA_VERSION_PLACEHOLDER|${FEDORA_VERSION}|g" /usr/lib/os-release \
     && sed -i "s|KUBERNETES_VERSION_PLACEHOLDER|${KUBERNETES_VERSION}|g" /usr/lib/os-release
+
+# Install the SELinux policy module that lets Android (redroid) boot in a
+# privileged container; see the .te for the full reasoning. Compiled here
+# rather than shipped as a .pp because the module binary format is tied to
+# the host's libsepol version. The policy store lives under /etc, so this
+# persists in the image. -N skips the kernel reload, which cannot work
+# during a build.
+RUN checkmodule -M -m -o /tmp/redroid-container.mod \
+        /usr/share/selinux/packages/redroid-container.te \
+    && semodule_package -o /tmp/redroid-container.pp -m /tmp/redroid-container.mod \
+    && semodule -N -i /tmp/redroid-container.pp \
+    && semodule -l | grep -qx redroid-container \
+    && rm -f /tmp/redroid-container.mod /tmp/redroid-container.pp
