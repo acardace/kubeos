@@ -29,7 +29,10 @@ RUN K8S_REPO_VERSION=$(echo ${KUBERNETES_VERSION} | cut -d. -f1,2) \
 # - Install hardware-specific firmware (matches Talos extensions)
 # - Install Kubernetes and container runtime
 # - Remove documentation, locales, and unused packages to minimize image size
-RUN dnf remove -y \
+# CRI-O minor version must match Kubernetes: Fedora's unversioned cri-o package
+# is frozen at 1.32, the versioned cri-o1.<minor> packages track Kubernetes.
+RUN CRI_O_PACKAGE="cri-o$(echo ${KUBERNETES_VERSION} | cut -d. -f1,2)" \
+    && dnf remove -y \
         NetworkManager \
         NetworkManager-libnm \
         NetworkManager-cloud-setup \
@@ -46,7 +49,7 @@ RUN dnf remove -y \
         realtek-firmware \
         linux-firmware \
         systemd-networkd \
-        cri-o \
+        ${CRI_O_PACKAGE} \
         kubeadm-${KUBERNETES_VERSION} \
         kubelet-${KUBERNETES_VERSION} \
         kubectl-${KUBERNETES_VERSION} \
